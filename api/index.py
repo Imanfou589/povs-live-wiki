@@ -78,11 +78,11 @@ def getCharacterDetail(name):
     return {'avatar': avatar, 'features': features,'bio': bio, 'channel': channel}
 
 
-@app.route('/characters', methods=['GET'])
+@app.route('/api/characters', methods=['GET'])
 def list_characters():
     return getCharacters()
 
-@app.route('/characters/<name>', methods=['GET'])
+@app.route('/api/characters/<name>', methods=['GET'])
 def list_details(name):
     return getCharacterDetail(name)
 
