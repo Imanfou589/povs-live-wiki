@@ -53,9 +53,9 @@ def getCharacterDetail(name):
             channelName = channel_url.replace('https://www.twitch.tv/', '').replace('http://www.twitch.tv/', '').replace('https://twitch.tv/', '').replace('http://twitch.tv/', '')
             channel = channelName.lower()
 
-    avatar = character_soup.find('img', attrs={'alt': editedName})
+    avatar = character_soup.find('img', class_="pi-image-thumbnail")
     if avatar is None:
-        editedName = '3.0'
+        editedName = '3.0'  # editedName değeri 3.0 olarak güncelleniyor
         avatar = character_soup.find('img', class_={'alt': editedName})
         if avatar is None:
             avatar = character_soup.find('img', attrs={'alt': editedName2})
@@ -63,19 +63,20 @@ def getCharacterDetail(name):
     if avatar is not None:
         avatar = avatar['src']
     else:
-        avatar = False
+        avatar =  character_soup.find('img', class_="pi-image-thumbnail")['src']
 
-    if pTag_data:  # Check if pTag_data is not empty
+    bio = ""
+    if pTag_data:
         bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
-    else:
-        bio = "No bio available"  # Set default value if no bio is found
 
     features = {}
-    for section in features_data.find_all('section'):
-        for item in section.find_all('div', class_='pi-item'):
-            label = item.find('h3', class_='pi-data-label').text.strip()
-            value = item.find('div', class_='pi-data-value').text.strip()
-            features[label] = value
+    if features_data:
+        for section in features_data.find_all('section'):
+            for item in section.find_all('div', class_='pi-item'):
+                label = item.find('h3', class_='pi-data-label').text.strip()
+                value = item.find('div', class_='pi-data-value').text.strip()
+                features[label] = value
+                
     return {'avatar': avatar, 'features': features, 'bio': bio, 'channel': channel}
 
 
