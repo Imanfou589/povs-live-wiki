@@ -2,7 +2,4 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
   ],
-  "engines": {
-    "node": "18.x"
-  }
 }
