@@ -4,6 +4,30 @@ import requests
 
 app = Flask(__name__)
 
+def getCharacters():
+    with requests.Session() as se:
+        se.headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Language": "en-US,en;q=0.9"
+        }
+        characters = []
+        charactersURL = se.get('https://vorp.fandom.com/tr/wiki/Karakterler')
+        soup = BeautifulSoup(charactersURL.content, 'html.parser')
+
+        for i in range(22):
+            characterPageMain = f"gallery-{i}"
+            characterPageContent = soup.find('div', id=characterPageMain)
+
+            if characterPageContent:
+                charactersContent = characterPageContent.find_all('a')
+                for character in charactersContent:
+                    character_name = character.text.strip()
+                    if character_name:
+                        characters.append(character_name)
+        return characters
+
 def getCharacterDetail(name):
     with requests.Session() as se:
         se.headers = {
@@ -55,4 +79,4 @@ def list_details(name):
     return getCharacterDetail(name)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
