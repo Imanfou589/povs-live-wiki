@@ -1,13 +1,10 @@
 from flask import Flask, jsonify
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 app = Flask(__name__)
 
-channels = []
-
 def getCharacters():
-    
     with requests.Session() as se:
         se.headers = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
@@ -56,9 +53,9 @@ def getCharacterDetail(name):
             channelName = channel_url.replace('https://www.twitch.tv/', '').replace('http://www.twitch.tv/', '').replace('https://twitch.tv/', '').replace('http://twitch.tv/', '')
             channel = channelName.lower()
 
-    avatar = character_soup.find('img', class_="pi-image-thumbnail")
+    avatar = character_soup.find('img', attrs={'alt': editedName})
     if avatar is None:
-        editedName = '3.0'  # editedName değeri 3.0 olarak güncelleniyor
+        editedName = '3.0'
         avatar = character_soup.find('img', class_={'alt': editedName})
         if avatar is None:
             avatar = character_soup.find('img', attrs={'alt': editedName2})
@@ -66,7 +63,7 @@ def getCharacterDetail(name):
     if avatar is not None:
         avatar = avatar['src']
     else:
-        avatar =  character_soup.find('img', class_="pi-image-thumbnail")['src']
+        avatar = False
 
     bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
     features = {}
