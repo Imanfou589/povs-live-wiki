@@ -55,7 +55,7 @@ def getCharacterDetail(name):
 
     avatar = character_soup.find('img', attrs={'alt': editedName})
     if avatar is None:
-        editedName = '3.0'  # editedName değeri 3.0 olarak güncelleniyor
+        editedName = '3.0'
         avatar = character_soup.find('img', class_={'alt': editedName})
         if avatar is None:
             avatar = character_soup.find('img', attrs={'alt': editedName2})
@@ -63,11 +63,12 @@ def getCharacterDetail(name):
     if avatar is not None:
         avatar = avatar['src']
     else:
-        avatar =  character_soup.find('img', class_="pi-image-thumbnail")['src']
+        avatar = False
 
-    bio = ""
-    if pTag_data:
+    if pTag_data:  # Check if pTag_data is not empty
         bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
+    else:
+        bio = "No bio available"  # Set default value if no bio is found
 
     features = {}
     for section in features_data.find_all('section'):
@@ -75,7 +76,8 @@ def getCharacterDetail(name):
             label = item.find('h3', class_='pi-data-label').text.strip()
             value = item.find('div', class_='pi-data-value').text.strip()
             features[label] = value
-    return {'avatar': avatar, 'features': features,'bio': bio, 'channel': channel}
+    return {'avatar': avatar, 'features': features, 'bio': bio, 'channel': channel}
+
 
 
 @app.route('/api/characters', methods=['GET'])
