@@ -55,7 +55,7 @@ def getCharacterDetail(name):
 
     avatar = character_soup.find('img', attrs={'alt': editedName})
     if avatar is None:
-        editedName = '3.0'
+        editedName = '3.0'  # editedName değeri 3.0 olarak güncelleniyor
         avatar = character_soup.find('img', class_={'alt': editedName})
         if avatar is None:
             avatar = character_soup.find('img', attrs={'alt': editedName2})
@@ -63,9 +63,12 @@ def getCharacterDetail(name):
     if avatar is not None:
         avatar = avatar['src']
     else:
-        avatar = False
+        avatar =  character_soup.find('img', class_="pi-image-thumbnail")['src']
 
-    bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
+    bio = ""
+    if pTag_data:
+        bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
+
     features = {}
     for section in features_data.find_all('section'):
         for item in section.find_all('div', class_='pi-item'):
