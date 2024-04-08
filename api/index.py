@@ -6,12 +6,7 @@ app = Flask(__name__)
 
 def getCharacters():
     with requests.Session() as se:
-        se.headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept-Language": "en-US,en;q=0.9"
-        }
+        se.headers = {"cookie": "CONSENT=YES+cb.20230531-04-p0.en+FX+908"}
         characters = []
         charactersURL = se.get('https://vorp.fandom.com/tr/wiki/Karakterler')
         soup = BeautifulSoup(charactersURL.content, 'html.parser')
