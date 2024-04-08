@@ -13,7 +13,7 @@ def getCharacters():
         charactersURL = se.get('https://vorp.fandom.com/tr/wiki/Karakterler')
         soup = BeautifulSoup(charactersURL.content, 'html.parser')
 
-        for i in range(22):
+        for i in range(28):
             characterPageMain = f"gallery-{i}"
             characterPageContent = soup.find('div', id=characterPageMain)
 
