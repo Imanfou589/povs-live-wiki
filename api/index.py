@@ -36,6 +36,8 @@ def getCharacterDetail(name):
     features_data = character_soup.find('aside')
     pTag_data = character_soup.find_all('p')
 
+    channel = None  # Assigning a default value
+
     channel_data = character_soup.find('a', class_='external free')
     
     if channel_data:
@@ -64,7 +66,6 @@ def getCharacterDetail(name):
             value = item.find('div', class_='pi-data-value').text.strip()
             features[label] = value
     return {'avatar': avatar, 'features': features,'bio': bio, 'channel': channel}
-
 
 @app.route('/api/characters', methods=['GET'])
 def list_characters():
