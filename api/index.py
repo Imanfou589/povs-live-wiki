@@ -1,8 +1,10 @@
 from flask import Flask, jsonify
 from bs4 import BeautifulSoup
+from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
+CORS(app)
 
 def getCharacters():
     with requests.Session() as se:
