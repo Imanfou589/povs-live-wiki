@@ -46,18 +46,7 @@ def getCharacterDetail(name):
             channelName = channel_url.replace('https://www.twitch.tv/', '').replace('http://www.twitch.tv/', '').replace('https://twitch.tv/', '').replace('http://twitch.tv/', '')
             channel = channelName.lower()
 
-    avatar = character_soup.find('img', attrs={'alt': editedName})
-    if avatar is None:
-        editedName = '3.0'
-        avatar = character_soup.find('img', class_={'alt': editedName})
-        if avatar is None:
-            avatar = character_soup.find('img', attrs={'alt': editedName2})
-
-    if avatar is not None:
-        avatar = avatar['src']
-    else:
-        avatar = False
-
+    avatar = character_soup.find_all('img', class_='pi-image-thumbnail')
     bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
     features = {}
     for section in features_data.find_all('section'):
