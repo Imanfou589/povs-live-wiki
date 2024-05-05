@@ -2,6 +2,11 @@
 
 include 'simple_html_dom.php';
 
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST");
+header("Access-Control-Allow-Headers: Content-Type");
+
+
 function getCharacters() {
     $characters = [];
     $charactersURL = 'https://vorp.fandom.com/tr/wiki/Karakterler';
