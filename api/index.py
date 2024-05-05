@@ -1,68 +1,123 @@
-from flask import Flask, jsonify
-from bs4 import BeautifulSoup
-from flask_cors import CORS
-import requests
+<?php
 
-app = Flask(__name__)
-CORS(app)
+include 'simple_html_dom.php';
 
-def getCharacters():
-    with requests.Session() as se:
-        se.headers = {"cookie": "CONSENT=YES+cb.20230531-04-p0.en+FX+908"}
-        characters = []
-        charactersURL = se.get('https://vorp.fandom.com/tr/wiki/Karakterler')
-        soup = BeautifulSoup(charactersURL.content, 'html.parser')
+function getCharacters() {
+    $characters = [];
+    $charactersURL = 'https://vorp.fandom.com/tr/wiki/Karakterler';
+    $html = file_get_html($charactersURL);
 
-        for i in range(28):
-            characterPageMain = f"gallery-{i}"
-            characterPageContent = soup.find('div', id=characterPageMain)
+    for ($i = 0; $i < 50; $i++) {
+        $characterPageMain = "gallery-$i";
+        $characterPageContent = $html->find("#$characterPageMain", 0);
 
-            if characterPageContent:
-                charactersContent = characterPageContent.find_all('a')
-                for character in charactersContent:
-                    character_name = character.text.strip()
-                    if character_name:
-                        characters.append(character_name)
-        return characters
+        if ($characterPageContent) {
+            $charactersContent = $characterPageContent->find('a');
+            foreach ($charactersContent as $character) {
+                $character_name = trim($character->plaintext);
+                if ($character_name) {
+                    $characters[] = $character_name;
+                }
+            }
+        }
+    }
 
-def getCharacterDetail(name):
-    with requests.Session() as se:
-        se.headers = {"cookie": "CONSENT=YES+cb.20230531-04-p0.en+FX+908"}
+    return $characters;
+}
 
-    editedName2 = "FandomPP-" + name.replace(' ', '_').split("_")[0]
-    editedName = name.replace(' ', '_').split("_")[0] + name.replace(' ', '_').split("_")[1][0]
-    character_page = se.get(f"https://vorp.fandom.com/tr/wiki/{name.replace(' ', '_')}")
-    character_soup = BeautifulSoup(character_page.content, 'html.parser')
-    features_data = character_soup.find('aside')
-    pTag_data = character_soup.find_all('p')
+function getCharacterDetail($name) {
+    $encoded_name = urlencode($name);
+    $character_page_url = "https://vorp.fandom.com/tr/wiki/$encoded_name";
+    $html = str_get_html(get_web_page($character_page_url));
 
-    channel = None  # Assigning a default value
+    if (!$html) {
+        return null;
+    }
 
-    channel_data = character_soup.find('a', class_='external free')
-    
-    if channel_data:
-        channel_url = channel_data['href']
-        if 'twitch.tv' in channel_url and 'team/vorp' not in channel_url:
-            channelName = channel_url.replace('https://www.twitch.tv/', '').replace('http://www.twitch.tv/', '').replace('https://twitch.tv/', '').replace('http://twitch.tv/', '')
-            channel = channelName.lower()
+    $features_data = $html->find('aside', 0);
+    $pTag_data = $html->find('p');
+    $channel = null;
+    $channel_data = $html->find('a.external.free', 0);
 
-    avatar = character_soup.find_all('img', class_='pi-image-thumbnail')
-    bio = max(pTag_data, key=lambda p: len(p.get_text())).text.strip()
-    features = {}
-    for section in features_data.find_all('section'):
-        for item in section.find_all('div', class_='pi-item'):
-            label = item.find('h3', class_='pi-data-label').text.strip()
-            value = item.find('div', class_='pi-data-value').text.strip()
-            features[label] = value
-    return {'avatar': avatar, 'features': features,'bio': bio, 'channel': channel}
+    if ($channel_data) {
+        $channel_url = $channel_data->href;
+        if (strpos($channel_url, 'twitch.tv') !== false && strpos($channel_url, 'team/vorp') === false) {
+            $channelName = str_replace(['https://www.twitch.tv/', 'http://www.twitch.tv/', 'https://twitch.tv/', 'http://twitch.tv/'], '', $channel_url);
+            $channel = strtolower($channelName);
+        }
+    }
 
-@app.route('/api/characters', methods=['GET'])
-def list_characters():
-    return getCharacters()
+    $avatar_urls = [];
+    foreach ($html->find('figure.pi-item img.pi-image-thumbnail') as $img) {
+        $avatar_url = $img->getAttribute('src');
+        if ($avatar_url) {
+            $avatar_urls[] = $avatar_url;
+        }
+    }
 
-@app.route('/api/characters/<name>', methods=['GET'])
-def list_details(name):
-    return getCharacterDetail(name)
+    $bio = '';
+    foreach ($pTag_data as $p) {
+        $text = trim($p->plaintext);
+        if (strlen($text) > strlen($bio)) {
+            $bio = $text;
+        }
+    }
 
-if __name__ == '__main__':
-    app.run(debug=True)
+    $features = [];
+    foreach ($features_data->find('section') as $section) {
+        foreach ($section->find('div.pi-item') as $item) {
+            $label = trim($item->find('h3.pi-data-label', 0)->plaintext);
+            $value = trim($item->find('div.pi-data-value', 0)->plaintext);
+            $features[$label] = $value;
+        }
+    }
+
+    return ['avatar' => $avatar_urls, 'features' => $features, 'bio' => $bio, 'channel' => $channel];
+}
+
+function get_web_page($url) {
+    $options = array(
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HEADER         => false,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS      => 10,
+        CURLOPT_ENCODING       => "",
+        CURLOPT_USERAGENT      => "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3",
+        CURLOPT_AUTOREFERER    => true,
+        CURLOPT_CONNECTTIMEOUT => 120,
+        CURLOPT_TIMEOUT        => 120,
+    );
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, $options);
+
+    $content = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        return false;
+    }
+
+    curl_close($ch);
+    return $content;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    if (isset($_GET['name'])) {
+        $name = $_GET['name'];
+        $character_details = getCharacterDetail($name);
+
+        if ($character_details) {
+            header('Content-Type: application/json');
+            echo json_encode($character_details);
+        } else {
+            header("HTTP/1.0 404 Not Found");
+            echo json_encode(['error' => 'Character not found']);
+        }
+    } else {
+        $characters_list = getCharacters();
+        header('Content-Type: application/json');
+        echo json_encode($characters_list);
+    }
+}
+
+?>
