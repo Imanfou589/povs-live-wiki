@@ -6,70 +6,39 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST");
 header("Access-Control-Allow-Headers: Content-Type");
 
+function fetchCharacterDetails($characterName) {
+    $encodedName = urlencode($characterName);
+    $characterPageUrl = "https://vorp.fandom.com/tr/wiki/$encodedName";
+    $htmlContent = getWebPage($characterPageUrl);
 
-function getCharacters() {
-    $characters = [];
-    $charactersURL = 'https://vorp.fandom.com/tr/wiki/Karakterler';
-    $html = file_get_html($charactersURL);
-
-    for ($i = 0; $i < 50; $i++) {
-        $characterPageMain = "gallery-$i";
-        $characterPageContent = $html->find("#$characterPageMain", 0);
-
-        if ($characterPageContent) {
-            $charactersContent = $characterPageContent->find('a');
-            foreach ($charactersContent as $character) {
-                $character_name = trim($character->plaintext);
-                if ($character_name) {
-                    $characters[] = $character_name;
-                }
-            }
-        }
-    }
-
-    return $characters;
-}
-
-function getCharacterDetail($name) {
-    $encoded_name = urlencode($name);
-    $character_page_url = "https://vorp.fandom.com/tr/wiki/$encoded_name";
-    $html = str_get_html(get_web_page($character_page_url));
-
-    if (!$html) {
+    if (!$htmlContent) {
         return null;
     }
 
-    $features_data = $html->find('aside', 0);
-    $pTag_data = $html->find('p');
-    $channel = null;
-    $channel_data = $html->find('a.external.free', 0);
+    $html = str_get_html($htmlContent);
 
-    if ($channel_data) {
-        $channel_url = $channel_data->href;
-        if (strpos($channel_url, 'twitch.tv') !== false && strpos($channel_url, 'team/vorp') === false) {
-            $channelName = str_replace(['https://www.twitch.tv/', 'http://www.twitch.tv/', 'https://twitch.tv/', 'http://twitch.tv/'], '', $channel_url);
-            $channel = strtolower($channelName);
+    $featuresData = $html->find('aside', 0);
+    $twitchChannel = null;
+    $channelData = $html->find('a.external.free', 0);
+
+    if ($channelData) {
+        $channelUrl = $channelData->href;
+        if (strpos($channelUrl, 'twitch.tv') !== false && strpos($channelUrl, 'team/vorp') === false) {
+            $channelName = str_replace(['https://www.twitch.tv/', 'http://www.twitch.tv/', 'https://twitch.tv/', 'http://twitch.tv/'], '', $channelUrl);
+            $twitchChannel = strtolower($channelName);
         }
     }
 
-    $avatar_urls = [];
+    $avatarUrls = [];
     foreach ($html->find('figure.pi-item img.pi-image-thumbnail') as $img) {
-        $avatar_url = $img->getAttribute('src');
-        if ($avatar_url) {
-            $avatar_urls[] = $avatar_url;
-        }
-    }
-
-    $bio = '';
-    foreach ($pTag_data as $p) {
-        $text = trim($p->plaintext);
-        if (strlen($text) > strlen($bio)) {
-            $bio = $text;
+        $avatarUrl = $img->getAttribute('src');
+        if ($avatarUrl) {
+            $avatarUrls[] = $avatarUrl;
         }
     }
 
     $features = [];
-    foreach ($features_data->find('section') as $section) {
+    foreach ($featuresData->find('section') as $section) {
         foreach ($section->find('div.pi-item') as $item) {
             $label = trim($item->find('h3.pi-data-label', 0)->plaintext);
             $value = trim($item->find('div.pi-data-value', 0)->plaintext);
@@ -77,10 +46,16 @@ function getCharacterDetail($name) {
         }
     }
 
-    return ['avatar' => $avatar_urls, 'features' => $features, 'bio' => $bio, 'channel' => $channel];
+    // Yalnızca <p> etiketlerini al
+    $paragraphs = [];
+    foreach ($html->find('p') as $p) {
+        $paragraphs[] = $p->plaintext;
+    }
+
+    return ['avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel];
 }
 
-function get_web_page($url) {
+function getWebPage($url) {
     $options = array(
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HEADER         => false,
@@ -93,36 +68,34 @@ function get_web_page($url) {
         CURLOPT_TIMEOUT        => 120,
     );
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, $options);
+    $curl = curl_init($url);
+    curl_setopt_array($curl, $options);
 
-    $content = curl_exec($ch);
+    $content = curl_exec($curl);
 
-    if (curl_errno($ch)) {
+    if (curl_errno($curl)) {
         return false;
     }
 
-    curl_close($ch);
+    curl_close($curl);
     return $content;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['name'])) {
-        $name = $_GET['name'];
-        $character_details = getCharacterDetail($name);
+        $characterName = $_GET['name'];
+        $characterDetails = fetchCharacterDetails($characterName);
 
-        if ($character_details) {
+        if ($characterDetails) {
             header('Content-Type: application/json');
-            echo json_encode($character_details);
+            echo json_encode($characterDetails);
         } else {
             header("HTTP/1.0 404 Not Found");
             echo json_encode(['error' => 'Character not found']);
         }
     } else {
-        $characters_list = getCharacters();
         header('Content-Type: application/json');
-        echo json_encode($characters_list);
+        echo json_encode("For character wiki information: ?name={characterName_LastName}");
     }
 }
-
 ?>
