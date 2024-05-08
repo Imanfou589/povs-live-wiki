@@ -52,7 +52,7 @@ function fetchCharacterDetails($characterName) {
         $paragraphs[] = $p->plaintext;
     }
 
-    return ['avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel];
+    return ['name' => $_GET['name'], 'avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel];
 }
 
 function getWebPage($url) {
