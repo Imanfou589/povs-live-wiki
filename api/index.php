@@ -1,25 +1,19 @@
 <?php
 include 'simple_html_dom.php';
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST");
 header("Access-Control-Allow-Headers: Content-Type");
-
 function fetchCharacterDetails($characterName) {
     $encodedName = urlencode($characterName);
     $characterPageUrl = "https://vorp.fandom.com/tr/wiki/$encodedName";
     $htmlContent = getWebPage($characterPageUrl);
-
     if (!$htmlContent) {
         return null;
     }
-
     $html = str_get_html($htmlContent);
-
     $featuresData = $html->find('aside', 0);
     $twitchChannel = null;
     $channelData = $html->find('a.external.free', 0);
-
     if ($channelData) {
         $channelUrl = $channelData->href;
         if (strpos($channelUrl, 'twitch.tv') !== false && strpos($channelUrl, 'team/vorp') === false) {
@@ -27,23 +21,13 @@ function fetchCharacterDetails($characterName) {
             $twitchChannel = strtolower($channelName);
         }
     }
-
     $avatarUrls = [];
     foreach ($html->find('figure.pi-item img.pi-image-thumbnail') as $img) {
         $avatarUrl = $img->getAttribute('src');
-        $avatarUrl = str_replace('amp;', '', $avatarUrl);
         if ($avatarUrl) {
             $avatarUrls[] = $avatarUrl;
         }
     }
-
-    if (!empty($avatarUrls)) {
-        $avatarUrl = $avatarUrls[0];
-        $imageData = getAvatarImage($avatarUrl, $characterName);
-    } else {
-        $imageData = null;
-    }
-
     $features = [];
     foreach ($featuresData->find('section') as $section) {
         foreach ($section->find('div.pi-item') as $item) {
@@ -52,14 +36,13 @@ function fetchCharacterDetails($characterName) {
             $features[$label] = $value;
         }
     }
-
     // Yalnızca <p> etiketlerini al
     $paragraphs = [];
     foreach ($html->find('p') as $p) {
         $paragraphs[] = $p->plaintext;
     }
 
-    return ['name' => $_GET['name'], 'avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel, 'avatar_url' => $imageData ? "/$characterName.webp" : null];
+    return ['name' => $_GET['name'], 'avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel];
 }
 
 function getWebPage($url) {
@@ -74,41 +57,19 @@ function getWebPage($url) {
         CURLOPT_CONNECTTIMEOUT => 120,
         CURLOPT_TIMEOUT        => 120,
     );
-
     $curl = curl_init($url);
     curl_setopt_array($curl, $options);
-
     $content = curl_exec($curl);
-
     if (curl_errno($curl)) {
         return false;
     }
-
     curl_close($curl);
     return $content;
 }
-
-function getAvatarImage($avatarUrl, $characterName) {
-    $ch = curl_init($avatarUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $imageData = curl_exec($ch);
-    curl_close($ch);
-
-    if ($imageData === false) {
-        return null; // Avatar alınamadı hatası
-    }
-    
-    $imageName = preg_replace("/[^A-Za-z0-9\-]/", '', $characterName) . '.webp';
-    file_put_contents($imageName, $imageData);
-
-    return $imageName;
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if (isset($_GET['name'])) {
         $characterName = $_GET['name'];
         $characterDetails = fetchCharacterDetails($characterName);
-
         if ($characterDetails) {
             header('Content-Type: application/json');
             echo json_encode($characterDetails);
