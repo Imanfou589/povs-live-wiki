@@ -37,11 +37,12 @@ function fetchCharacterDetails($characterName) {
         }
     }
 
-    $avatarUrl = $avatarUrls[0];
-    $imageData = file_get_contents($avatarUrl);
-    $imageName = str_replace(' ', '', $characterName); 
-    $imageName .= '.webp'; 
-    file_put_contents($imageName, $imageData);
+    if (!empty($avatarUrls)) {
+        $avatarUrl = $avatarUrls[0];
+        $imageData = getAvatarImage($avatarUrl, $characterName);
+    } else {
+        $imageData = null;
+    }
 
     $features = [];
     foreach ($featuresData->find('section') as $section) {
@@ -58,7 +59,7 @@ function fetchCharacterDetails($characterName) {
         $paragraphs[] = $p->plaintext;
     }
 
-    return ['name' => $_GET['name'], 'avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel];
+    return ['name' => $_GET['name'], 'avatar' => $avatarUrls, 'features' => $features, 'bio' => implode("\n", $paragraphs), 'channel' => $twitchChannel, 'avatar_url' => $imageData ? "/$characterName.webp" : null];
 }
 
 function getWebPage($url) {
@@ -85,6 +86,22 @@ function getWebPage($url) {
 
     curl_close($curl);
     return $content;
+}
+
+function getAvatarImage($avatarUrl, $characterName) {
+    $ch = curl_init($avatarUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $imageData = curl_exec($ch);
+    curl_close($ch);
+
+    if ($imageData === false) {
+        return null; // Avatar alınamadı hatası
+    }
+    
+    $imageName = preg_replace("/[^A-Za-z0-9\-]/", '', $characterName) . '.webp';
+    file_put_contents($imageName, $imageData);
+
+    return $imageName;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
