@@ -1,5 +1,4 @@
 <?php
-
 include 'simple_html_dom.php';
 
 header("Access-Control-Allow-Origin: *");
@@ -32,10 +31,17 @@ function fetchCharacterDetails($characterName) {
     $avatarUrls = [];
     foreach ($html->find('figure.pi-item img.pi-image-thumbnail') as $img) {
         $avatarUrl = $img->getAttribute('src');
+        $avatarUrl = str_replace('amp;', '', $avatarUrl);
         if ($avatarUrl) {
             $avatarUrls[] = $avatarUrl;
         }
     }
+
+    $avatarUrl = $avatarUrls[0];
+    $imageData = file_get_contents($avatarUrl);
+    $imageName = str_replace(' ', '', $characterName); 
+    $imageName .= '.webp'; 
+    file_put_contents($imageName, $imageData);
 
     $features = [];
     foreach ($featuresData->find('section') as $section) {
